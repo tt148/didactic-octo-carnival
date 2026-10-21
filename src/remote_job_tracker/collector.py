@@ -11,11 +11,10 @@ from pathlib import Path
 
 from remote_job_tracker.filters import keep_job
 from remote_job_tracker.models import Job
+from remote_job_tracker.paths import PROJECT_ROOT, data_directory
 from remote_job_tracker.scoring import score_job
 from remote_job_tracker.sources import SOURCES
 from remote_job_tracker.storage import connect_database, export_csv, save_jobs
-
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def collect_jobs(config: Mapping[str, object]) -> tuple[list[Job], list[str]]:
@@ -63,8 +62,8 @@ def run_collection(config_path: Path, database_path: Path, csv_path: Path) -> No
 def main() -> None:
     parser = argparse.ArgumentParser(description="Collect remote job listings.")
     parser.add_argument("--config", type=Path, default=PROJECT_ROOT / "config.json")
-    parser.add_argument("--database", type=Path, default=PROJECT_ROOT / "jobs.db")
-    parser.add_argument("--csv", type=Path, default=PROJECT_ROOT / "jobs.csv")
+    parser.add_argument("--database", type=Path, default=data_directory() / "jobs.db")
+    parser.add_argument("--csv", type=Path, default=data_directory() / "jobs.csv")
     args = parser.parse_args()
     try:
         run_collection(args.config, args.database, args.csv)

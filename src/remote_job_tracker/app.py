@@ -6,7 +6,6 @@ import hashlib
 import json
 import sqlite3
 from contextlib import closing
-from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -19,9 +18,9 @@ from remote_job_tracker.dashboard import (
     nigeria_eligible_share,
     prepare_dashboard_jobs,
 )
+from remote_job_tracker.paths import PROJECT_ROOT, data_directory
 from remote_job_tracker.storage import VALID_STATUSES, connect_database, update_status
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 STATUS_OPTIONS = ("new", "saved", "applied", "ignored")
 LOCATION_OPTIONS = ("allowed", "unknown")
 
@@ -39,7 +38,7 @@ def run_dashboard() -> None:
         config = json.loads((PROJECT_ROOT / "config.json").read_text(encoding="utf-8"))
         if not isinstance(config, dict):
             raise ValueError("config.json must contain a JSON object.")
-        with closing(connect_database(PROJECT_ROOT / "jobs.db")) as db:
+        with closing(connect_database(data_directory() / "jobs.db")) as db:
             jobs = prepare_dashboard_jobs(db, config)
             if not jobs:
                 st.info("No eligible job listings yet. Run `python collector.py` to collect jobs.")

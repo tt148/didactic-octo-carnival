@@ -29,6 +29,7 @@ CSV_COLUMNS = (
 
 
 def connect_database(path: Path) -> sqlite3.Connection:
+    path.parent.mkdir(parents=True, exist_ok=True)
     db = sqlite3.connect(path)
     db.row_factory = sqlite3.Row
     db.execute(
@@ -185,6 +186,7 @@ def update_status(db: sqlite3.Connection, source: str, job_id: str, status: str)
 
 
 def export_csv(db: sqlite3.Connection, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     rows = db.execute(
         f"SELECT {', '.join(CSV_COLUMNS)} FROM jobs ORDER BY first_seen DESC"
     )

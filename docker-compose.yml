@@ -1,0 +1,13 @@
+services:
+  tracker:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      JOB_TRACKER_DATA_DIR: /data
+    volumes:
+      - tracker-data:/data
+    restart: unless-stopped
+
+volumes:
+  tracker-data:

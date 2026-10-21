@@ -86,6 +86,19 @@ def test_update_status_rejects_invalid_values(tmp_path):
     db.close()
 
 
+def test_database_and_csv_output_directories_are_created(tmp_path):
+    database_path = tmp_path / "nested" / "tracker" / "jobs.db"
+    db = connect_database(database_path)
+    save_jobs(db, [make_job()])
+    csv_path = tmp_path / "nested" / "exports" / "jobs.csv"
+    from remote_job_tracker.storage import export_csv
+
+    export_csv(db, csv_path)
+    assert database_path.exists()
+    assert csv_path.exists()
+    db.close()
+
+
 def test_refreshing_existing_job_updates_description_but_preserves_tracking(tmp_path):
     db = connect_database(tmp_path / "jobs.db")
     original = make_job()
