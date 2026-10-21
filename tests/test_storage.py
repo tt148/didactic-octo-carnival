@@ -84,3 +84,25 @@ def test_update_status_rejects_invalid_values(tmp_path):
     with pytest.raises(ValueError, match="Invalid job status"):
         update_status(db, "remotive", "123", "submitted")
     db.close()
+
+
+def test_refreshing_existing_job_updates_description_but_preserves_tracking(tmp_path):
+    db = connect_database(tmp_path / "jobs.db")
+    original = make_job()
+    assert save_jobs(db, [original]) == [original]
+    first_seen = db.execute("SELECT first_seen FROM jobs").fetchone()["first_seen"]
+    assert update_status(db, original.source, original.job_id, "applied")
+
+    refreshed = make_job()
+    refreshed.description = "Full, refreshed listing details."
+    refreshed.fit_score = 77
+    refreshed.score_reasons = ["Updated score reason."]
+    assert save_jobs(db, [refreshed]) == []
+    stored = db.execute(
+        "SELECT description, status, first_seen, fit_score FROM jobs"
+    ).fetchone()
+    assert stored["description"] == "Full, refreshed listing details."
+    assert stored["status"] == "applied"
+    assert stored["first_seen"] == first_seen
+    assert stored["fit_score"] == 77
+    db.close()

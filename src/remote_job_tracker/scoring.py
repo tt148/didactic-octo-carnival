@@ -47,6 +47,27 @@ def _required_list(mapping: Mapping[str, object], key: str) -> list[str]:
     return value
 
 
+def matching_skills(job: Job, profile: Mapping[str, object]) -> dict[str, str]:
+    """Map each matched configured skill to the phrase found in the job text."""
+    skills = _required_list(profile, "skills")
+    aliases = profile.get("skill_aliases", {})
+    if not isinstance(aliases, Mapping):
+        raise ValueError("Profile field 'skill_aliases' must be an object.")
+    searchable_text = f"{job.title} {job.description}"
+    matches: dict[str, str] = {}
+    for skill in skills:
+        skill_aliases = aliases.get(skill, [])
+        if not isinstance(skill_aliases, list) or any(
+            not isinstance(alias, str) for alias in skill_aliases
+        ):
+            raise ValueError(f"Aliases for skill {skill!r} must be a list of strings.")
+        for phrase in [skill, *skill_aliases]:
+            if _has_phrase(searchable_text, phrase):
+                matches[skill] = phrase
+                break
+    return matches
+
+
 def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
     """Return a 0-100 score with one reason for each scoring component."""
     profile = config.get("profile")
@@ -74,10 +95,18 @@ def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
     if maximum != 100 or any(weights[key] < 0 for key in weights):
         raise ValueError("Scoring weights must total 100 and cannot be negative.")
 
-    searchable_text = f"{job.title} {job.description}"
-    matching_skills = [skill for skill in skills if _has_phrase(searchable_text, skill)]
-    skill_points = round(weights["skills"] * len(matching_skills) / len(skills))
-    matched_skill_text = ", ".join(matching_skills) if matching_skills else "none"
+    skill_matches = matching_skills(job, profile)
+    skill_points = round(weights["skills"] * len(skill_matches) / len(skills))
+    matched_skill_text = (
+        ", ".join(
+            f"{skill} (matched '{phrase}')"
+            if phrase.casefold() != skill.casefold()
+            else skill
+            for skill, phrase in skill_matches.items()
+        )
+        if skill_matches
+        else "none"
+    )
 
     matched_primary = next((role for role in primary_roles if _has_phrase(job.title, role)), None)
     matched_secondary = next(
@@ -125,7 +154,7 @@ def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
 
     score = skill_points + role_points + location_points + seniority_points
     reasons = (
-        f"Skills: {len(matching_skills)}/{len(skills)} matched "
+        f"Skills: {len(skill_matches)}/{len(skills)} matched "
         f"({matched_skill_text}) - {skill_points}/{weights['skills']} points.",
         f"Role fit: {role_reason} - {role_points}/{weights['role']} points.",
         f"Location: {location_reason}.",
@@ -133,6 +162,6 @@ def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
     )
     job.fit_score = score
     job.score_reasons = list(reasons)
-    job.location_status = location_status if location_status != "restricted" else "unknown"
+    job.location_status = location_status
     job.location_reason = location_detail
     return FitScore(score=score, reasons=reasons)

@@ -102,9 +102,18 @@ def save_jobs(db: sqlite3.Connection, jobs: Iterable[Job]) -> list[Job]:
                 inserted.append(job)
             db.execute(
                 """UPDATE jobs
-                SET location_status = ?, location_reason = ?, fit_score = ?, score_reasons = ?
+                SET title = ?, company = ?, location = ?, url = ?, posted = ?,
+                    description = ?, apply_email = ?, location_status = ?, location_reason = ?,
+                    fit_score = ?, score_reasons = ?
                 WHERE source = ? AND job_id = ?""",
                 (
+                    job.title,
+                    job.company,
+                    job.location,
+                    job.url,
+                    job.posted,
+                    job.description,
+                    job.apply_email,
                     job.location_status,
                     job.location_reason,
                     job.fit_score,
@@ -134,6 +143,33 @@ def update_fit_score(db: sqlite3.Connection, job: Job) -> bool:
             ),
         )
     return cursor.rowcount == 1
+
+
+def load_jobs(db: sqlite3.Connection) -> list[Job]:
+    rows = db.execute(
+        """SELECT source, job_id, title, company, location, url, posted, description,
+        apply_email, location_status, location_reason, fit_score, status, first_seen
+        FROM jobs ORDER BY first_seen DESC"""
+    )
+    return [
+        Job(
+            source=row["source"],
+            job_id=row["job_id"],
+            title=row["title"] or "",
+            company=row["company"] or "",
+            location=row["location"] or "",
+            url=row["url"] or "",
+            posted=row["posted"] or "",
+            description=row["description"] or "",
+            apply_email=row["apply_email"] or "",
+            location_status=row["location_status"],
+            location_reason=row["location_reason"],
+            fit_score=row["fit_score"],
+            status=row["status"],
+            first_seen=row["first_seen"],
+        )
+        for row in rows
+    ]
 
 
 def update_status(db: sqlite3.Connection, source: str, job_id: str, status: str) -> bool:

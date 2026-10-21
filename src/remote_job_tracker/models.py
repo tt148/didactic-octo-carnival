@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
-LocationStatus = Literal["allowed", "unknown"]
+LocationStatus = Literal["allowed", "unknown", "restricted"]
 
 EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 BAD_EMAIL_RE = re.compile(r"(no-?reply|example\.com|\.png|\.jpg|\.gif)", re.IGNORECASE)
@@ -30,6 +30,8 @@ class Job:
     location_reason: str = "Location has not been assessed."
     fit_score: int | None = None
     score_reasons: list[str] | None = None
+    status: Literal["new", "saved", "applied", "ignored"] = "new"
+    first_seen: str = ""
 
 
 def clean_text(value: object) -> str:
@@ -62,7 +64,7 @@ def make_job(
     clean_url = clean_text(url)
     clean_posted = clean_text(posted)
     raw_desc = raw_description if isinstance(raw_description, str) else ""
-    description = clean_text(raw_desc)[:4000]
+    description = clean_text(raw_desc)
     identity = job_id or clean_url
     if not identity:
         identity = hashlib.sha256(

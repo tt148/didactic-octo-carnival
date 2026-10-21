@@ -1,6 +1,10 @@
+import json
+from pathlib import Path
+
 import pytest
 
 from remote_job_tracker.models import Job
+from remote_job_tracker.models import make_job as build_job
 from remote_job_tracker.scoring import score_job
 
 CONFIG = {
@@ -90,3 +94,73 @@ def test_invalid_score_weights_are_rejected():
     config = {**CONFIG, "score_weights": {**CONFIG["score_weights"], "role": "high"}}
     with pytest.raises(ValueError, match="must be an integer"):
         score_job(make_job("IT Support Engineer", "Linux", "Nigeria"), config)
+
+
+def test_aliases_match_and_are_explained():
+    config = {
+        **CONFIG,
+        "profile": {
+            **CONFIG["profile"],
+            "skills": ["help desk"],
+            "skill_aliases": {"help desk": ["helpdesk", "service desk"]},
+        },
+    }
+    job = make_job("Service Desk Engineer", "Contact the helpdesk team.", "Nigeria")
+    result = score_job(job, config)
+    assert result.score == 100
+    assert "help desk (matched 'helpdesk')" in result.reasons[0]
+    service_desk_result = score_job(
+        make_job("Service Desk Engineer", "", "Nigeria"), config
+    )
+    assert "help desk (matched 'service desk')" in service_desk_result.reasons[0]
+
+
+def test_skills_match_after_previous_description_truncation_boundary():
+    description = "General support information. " * 250 + "Hands-on Power BI reporting."
+    job = build_job(
+        "remotive",
+        "long-description",
+        "IT Support Engineer",
+        "Example Co",
+        "Nigeria",
+        "https://example.com/job",
+        "",
+        description,
+    )
+    config = {
+        **CONFIG,
+        "profile": {
+            **CONFIG["profile"],
+            "skills": ["Power BI"],
+            "skill_aliases": {"Power BI": ["PowerBI"]},
+        },
+    }
+    result = score_job(job, config)
+    assert len(job.description) > 4000
+    assert result.score == 100
+    assert "Power BI" in result.reasons[0]
+
+
+def test_config_contains_user_approved_profile_skills():
+    config = json.loads((Path(__file__).parents[1] / "config.json").read_text())
+    assert config["profile"]["skills"] == [
+        "Windows",
+        "Linux",
+        "networking",
+        "hardware",
+        "troubleshooting",
+        "IT support",
+        "help desk",
+        "technical support",
+        "SQL",
+        "Python",
+        "JavaScript",
+        "HTML",
+        "CSS",
+        "Excel",
+        "Power BI",
+        "Git",
+        "GitHub",
+        "Docker",
+        "cloud",
+    ]
