@@ -32,6 +32,11 @@ CONFIG = {
         "it technician",
         "it administrator",
         "network",
+        "devops",
+        "data analyst",
+        "data analysis",
+        "data engineer",
+        "business intelligence",
     ],
     "location_allow": ["worldwide", "anywhere", "global", "africa", "nigeria", "emea"],
     "location_deny": ["us", "usa", "united states", "canada", "uk", "india"],
@@ -46,6 +51,11 @@ def test_technical_support_specialist_matches():
     job = make_job("Technical Support Specialist", "Worldwide")
     assert keep_job(job, CONFIG)
     assert job.location_status == "allowed"
+
+
+def test_devops_and_data_roles_are_eligible():
+    assert keep_job(make_job("DevOps Engineer", "Nigeria"), CONFIG)
+    assert keep_job(make_job("Data Analyst", "Africa"), CONFIG)
 
 
 def test_senior_roles_remain_eligible():
@@ -75,9 +85,11 @@ def test_explicit_us_restrictions_in_title_or_description_are_rejected():
         "Worldwide",
         "Applicants must reside in the United States.",
     )
+    only_job = make_job("IT Support Engineer", "Worldwide", "This role is US only.")
     assert not keep_job(title_job, CONFIG)
     assert not keep_job(remote_job, CONFIG)
     assert not keep_job(description_job, CONFIG)
+    assert not keep_job(only_job, CONFIG)
 
 
 def test_unknown_location_is_not_promoted_to_allowed():

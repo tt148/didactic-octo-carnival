@@ -3,7 +3,12 @@ import sqlite3
 import pytest
 
 from remote_job_tracker.models import Job
-from remote_job_tracker.storage import connect_database, save_jobs, update_status
+from remote_job_tracker.storage import (
+    connect_database,
+    save_jobs,
+    update_fit_score,
+    update_status,
+)
 
 
 def make_job() -> Job:
@@ -27,10 +32,21 @@ def test_save_jobs_deduplicates_and_preserves_status_and_first_seen(tmp_path):
     assert save_jobs(db, [job, job]) == [job]
     first_seen = db.execute("SELECT first_seen FROM jobs").fetchone()["first_seen"]
     assert update_status(db, job.source, job.job_id, "saved")
+    job.fit_score = 87
+    job.score_reasons = ["Skills: 3/8 matched - 19/50 points."]
     assert save_jobs(db, [job]) == []
-    saved = db.execute("SELECT status, first_seen FROM jobs").fetchone()
+    assert save_jobs(db, [job]) == []
+    saved = db.execute(
+        "SELECT status, first_seen, fit_score, score_reasons FROM jobs"
+    ).fetchone()
     assert saved["status"] == "saved"
     assert saved["first_seen"] == first_seen
+    assert saved["fit_score"] == 87
+    assert "3/8 matched" in saved["score_reasons"]
+    assert update_fit_score(db, job)
+    scored = db.execute("SELECT fit_score, score_reasons FROM jobs").fetchone()
+    assert scored["fit_score"] == 87
+    assert "3/8 matched" in scored["score_reasons"]
     db.close()
 
 

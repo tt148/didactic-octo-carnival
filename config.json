@@ -8,8 +8,35 @@
     "it support", "help desk", "helpdesk", "service desk", "technical support",
     "tech support", "desktop support", "support engineer", "support specialist",
     "support technician", "system admin", "sysadmin", "it technician",
-    "it administrator", "network"
+  "it administrator", "network", "devops", "data analyst", "data analysis",
+  "data engineer", "business intelligence"
   ],
+  "profile": {
+  "skills": ["Windows", "Linux", "networking", "SQL", "Python", "Excel", "Docker", "Git"],
+  "primary_roles": [
+    "IT support", "help desk", "helpdesk", "service desk", "technical support",
+    "tech support", "desktop support", "system administrator", "sysadmin",
+    "IT administrator", "IT technician", "support engineer", "network engineer"
+  ],
+  "secondary_roles": [
+    "DevOps", "data analyst", "data analysis", "data engineer",
+    "business intelligence"
+  ],
+  "seniority_stretch_terms": ["senior"],
+  "high_stretch_terms": [
+    "staff", "principal", "lead", "manager", "director", "head", "vice president",
+    "vp", "chief"
+  ]
+  },
+  "score_weights": {
+  "skills": 50,
+  "role": 25,
+  "location": 15,
+  "seniority": 10,
+  "unknown_location": 5,
+  "senior_stretch_penalty": 4,
+  "high_stretch_penalty": 7
+  },
   "location_allow": ["worldwide", "anywhere", "global", "africa", "nigeria", "emea"],
   "location_deny": [
     "us", "usa", "united states", "u.s.", "canada", "uk", "uk only", "united kingdom",

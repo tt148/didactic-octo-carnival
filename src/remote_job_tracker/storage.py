@@ -80,7 +80,7 @@ def save_jobs(db: sqlite3.Connection, jobs: Iterable[Job]) -> list[Job]:
                     source, job_id, title, company, location, url, posted, description,
                     apply_email, status, first_seen, location_status, location_reason,
                     fit_score, score_reasons
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, NULL, '[]')""",
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?, ?, ?, ?)""",
                 (
                     job.source,
                     job.job_id,
@@ -94,11 +94,46 @@ def save_jobs(db: sqlite3.Connection, jobs: Iterable[Job]) -> list[Job]:
                     now,
                     job.location_status,
                     job.location_reason,
+                    job.fit_score,
+                    encode_score_reasons(job.score_reasons or []),
                 ),
             )
             if cursor.rowcount:
                 inserted.append(job)
+            db.execute(
+                """UPDATE jobs
+                SET location_status = ?, location_reason = ?, fit_score = ?, score_reasons = ?
+                WHERE source = ? AND job_id = ?""",
+                (
+                    job.location_status,
+                    job.location_reason,
+                    job.fit_score,
+                    encode_score_reasons(job.score_reasons or []),
+                    job.source,
+                    job.job_id,
+                ),
+            )
     return inserted
+
+
+def update_fit_score(db: sqlite3.Connection, job: Job) -> bool:
+    if job.fit_score is None:
+        raise ValueError("Cannot store a job without a fit score.")
+    with db:
+        cursor = db.execute(
+            """UPDATE jobs
+            SET fit_score = ?, score_reasons = ?, location_status = ?, location_reason = ?
+            WHERE source = ? AND job_id = ?""",
+            (
+                job.fit_score,
+                encode_score_reasons(job.score_reasons or []),
+                job.location_status,
+                job.location_reason,
+                job.source,
+                job.job_id,
+            ),
+        )
+    return cursor.rowcount == 1
 
 
 def update_status(db: sqlite3.Connection, source: str, job_id: str, status: str) -> bool:

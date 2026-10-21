@@ -11,6 +11,7 @@ from pathlib import Path
 
 from remote_job_tracker.filters import keep_job
 from remote_job_tracker.models import Job
+from remote_job_tracker.scoring import score_job
 from remote_job_tracker.sources import SOURCES
 from remote_job_tracker.storage import connect_database, export_csv, save_jobs
 
@@ -34,7 +35,10 @@ def collect_jobs(config: Mapping[str, object]) -> tuple[list[Job], list[str]]:
         jobs.extend(found)
     if successful_sources == 0:
         raise RuntimeError("All job sources failed; no collection was saved.")
-    return [job for job in jobs if keep_job(job, config)], failures
+    matched = [job for job in jobs if keep_job(job, config)]
+    for job in matched:
+        score_job(job, config)
+    return matched, failures
 
 
 def run_collection(config_path: Path, database_path: Path, csv_path: Path) -> None:

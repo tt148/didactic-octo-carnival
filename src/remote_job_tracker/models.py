@@ -28,6 +28,8 @@ class Job:
     apply_email: str = ""
     location_status: LocationStatus = "unknown"
     location_reason: str = "Location has not been assessed."
+    fit_score: int | None = None
+    score_reasons: list[str] | None = None
 
 
 def clean_text(value: object) -> str:
