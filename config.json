@@ -1,0 +1,19 @@
+{
+  "search_terms": ["it support", "helpdesk", "technical support", "service desk", "system administrator"],
+  "wwr_feeds": [
+    "https://weworkremotely.com/categories/remote-customer-support-jobs.rss",
+    "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss"
+  ],
+  "title_include": [
+    "it support", "help desk", "helpdesk", "service desk", "technical support",
+    "tech support", "desktop support", "support engineer", "support specialist",
+    "support technician", "system admin", "sysadmin", "it technician",
+    "it administrator", "network"
+  ],
+  "title_exclude": ["director", "head of", "vp "],
+  "location_allow": ["worldwide", "anywhere", "global", "africa", "nigeria", "emea"],
+  "location_deny": [
+    "usa", "united states", "us only", "u.s.", "canada", "uk only", "united kingdom",
+    "europe only", "eu only", "australia", "latin america", "latam", "india"
+  ]
+}
