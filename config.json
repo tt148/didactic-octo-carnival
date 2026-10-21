@@ -10,10 +10,9 @@
     "support technician", "system admin", "sysadmin", "it technician",
     "it administrator", "network"
   ],
-  "title_exclude": ["director", "head of", "vp "],
   "location_allow": ["worldwide", "anywhere", "global", "africa", "nigeria", "emea"],
   "location_deny": [
-    "usa", "united states", "us only", "u.s.", "canada", "uk only", "united kingdom",
+    "us", "usa", "united states", "u.s.", "canada", "uk", "uk only", "united kingdom",
     "europe only", "eu only", "australia", "latin america", "latam", "india"
   ]
 }
