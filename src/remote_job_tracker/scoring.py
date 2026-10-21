@@ -50,6 +50,7 @@ def _required_list(mapping: Mapping[str, object], key: str) -> list[str]:
 def matching_skills(job: Job, profile: Mapping[str, object]) -> dict[str, str]:
     """Map each matched configured skill to the phrase found in the job text."""
     skills = _required_list(profile, "skills")
+    aliases_only = _required_list(profile, "skill_match_aliases_only")
     aliases = profile.get("skill_aliases", {})
     if not isinstance(aliases, Mapping):
         raise ValueError("Profile field 'skill_aliases' must be an object.")
@@ -61,7 +62,8 @@ def matching_skills(job: Job, profile: Mapping[str, object]) -> dict[str, str]:
             not isinstance(alias, str) for alias in skill_aliases
         ):
             raise ValueError(f"Aliases for skill {skill!r} must be a list of strings.")
-        for phrase in [skill, *skill_aliases]:
+        phrases = skill_aliases if skill in aliases_only else [skill, *skill_aliases]
+        for phrase in phrases:
             if _has_phrase(searchable_text, phrase):
                 matches[skill] = phrase
                 break

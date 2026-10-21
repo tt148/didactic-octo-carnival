@@ -100,7 +100,12 @@
       "incident management": ["incident response", "incident handling"],
       "root cause analysis": ["RCA"],
       "remote desktop": ["RDP", "Remote Desktop Protocol"],
-      "documentation": ["technical documentation"],
+      "documentation": [
+        "technical documentation",
+        "IT documentation",
+        "system documentation",
+        "process documentation"
+      ],
       "knowledge base": ["KB", "knowledgebase"],
       "cybersecurity": ["cyber security", "information security", "infosec"],
       "endpoint protection": ["endpoint security", "endpoint detection and response", "EDR"],
@@ -111,8 +116,19 @@
       "command line": ["command-line", "CLI", "terminal"],
       "Power BI": ["PowerBI"],
       "GitHub": ["Git Hub"],
-      "cloud": ["cloud computing", "cloud services"]
+      "cloud": [
+        "cloud computing",
+        "cloud services",
+        "cloud infrastructure",
+        "AWS",
+        "Amazon Web Services",
+        "Azure",
+        "Microsoft Azure",
+        "Google Cloud Platform",
+        "GCP"
+      ]
     },
+    "skill_match_aliases_only": ["Teams", "documentation", "cloud"],
     "primary_roles": [
       "IT support",
       "help desk",

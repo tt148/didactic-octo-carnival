@@ -5,7 +5,7 @@ import pytest
 
 from remote_job_tracker.models import Job
 from remote_job_tracker.models import make_job as build_job
-from remote_job_tracker.scoring import score_job
+from remote_job_tracker.scoring import matching_skills, score_job
 
 CONFIG = {
     "location_allow": ["worldwide", "africa", "nigeria", "emea"],
@@ -141,6 +141,49 @@ def test_skills_match_after_previous_description_truncation_boundary():
     assert "Power BI" in result.reasons[0]
 
 
+def test_teams_only_matches_microsoft_teams():
+    profile = {
+        "skills": ["Teams"],
+        "skill_aliases": {"Teams": ["Microsoft Teams"]},
+        "skill_match_aliases_only": ["Teams"],
+    }
+    ordinary_teams = build_job(
+        "remotive", "teams-1", "Support Engineer", "Example Co", "Nigeria",
+        "https://example.com/1", "", "You will work with teams across the company."
+    )
+    microsoft_teams = build_job(
+        "remotive", "teams-2", "Support Engineer", "Example Co", "Nigeria",
+        "https://example.com/2", "", "Provide support for Microsoft Teams."
+    )
+    assert matching_skills(ordinary_teams, profile) == {}
+    assert matching_skills(microsoft_teams, profile) == {"Teams": "Microsoft Teams"}
+
+
+def test_generic_documentation_and_cloud_require_technical_context():
+    profile = {
+        "skills": ["documentation", "cloud"],
+        "skill_aliases": {
+            "documentation": ["technical documentation", "IT documentation"],
+            "cloud": ["cloud computing", "AWS", "Azure"],
+        },
+        "skill_match_aliases_only": ["documentation", "cloud"],
+    }
+    job = build_job(
+        "remotive", "generic-terms", "Support Engineer", "Example Co", "Nigeria",
+        "https://example.com/1", "", "Collaborate with teams and maintain documentation."
+    )
+    specific = build_job(
+        "remotive", "specific-terms", "Support Engineer", "Example Co", "Nigeria",
+        "https://example.com/2", "",
+        "Maintain IT documentation and support AWS cloud infrastructure."
+    )
+    assert matching_skills(job, profile) == {}
+    assert matching_skills(specific, profile) == {
+        "documentation": "IT documentation",
+        "cloud": "AWS",
+    }
+
+
 def test_config_contains_user_approved_profile_skills():
     config = json.loads((Path(__file__).parents[1] / "config.json").read_text())
     assert config["profile"]["skills"] == [
@@ -190,5 +233,10 @@ def test_config_contains_user_approved_profile_skills():
         "Git",
         "GitHub",
         "Docker",
+        "cloud",
+    ]
+    assert config["profile"]["skill_match_aliases_only"] == [
+        "Teams",
+        "documentation",
         "cloud",
     ]

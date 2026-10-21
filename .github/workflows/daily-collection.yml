@@ -1,0 +1,66 @@
+name: Daily job collection
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: daily-job-collection
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Collect, score, and persist jobs
+    runs-on: ubuntu-latest
+    env:
+      JOB_TRACKER_DATA_DIR: ${{ github.workspace }}/data
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install project
+        run: python -m pip install .
+
+      - name: Restore latest successful collection snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$JOB_TRACKER_DATA_DIR"
+          previous_run="$(gh run list \
+            --workflow daily-collection.yml \
+            --branch "$GITHUB_REF_NAME" \
+            --status success \
+            --limit 1 \
+            --json databaseId \
+            --jq '.[0].databaseId // empty')"
+          if [[ -n "$previous_run" ]]; then
+            echo "Restoring job data from successful run $previous_run."
+            gh run download "$previous_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
+          else
+            echo "No previous successful snapshot; starting a new database."
+          fi
+
+      - name: Collect and score remote jobs
+        run: python collector.py
+
+      - name: Upload updated collection snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-data
+          path: |
+            data/jobs.db
+            data/jobs.csv
+          if-no-files-found: error
+          retention-days: 90
