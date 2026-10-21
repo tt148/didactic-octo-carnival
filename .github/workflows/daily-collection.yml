@@ -46,8 +46,15 @@ jobs:
             --json databaseId \
             --jq '.[0].databaseId // empty')"
           if [[ -n "$previous_run" ]]; then
-            echo "Restoring job data from successful run $previous_run."
-            gh run download "$previous_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
+            active_artifacts="$(gh api \
+              "repos/${GITHUB_REPOSITORY}/actions/runs/${previous_run}/artifacts" \
+              --jq '[.artifacts[] | select(.name == "job-data" and .expired == false)] | length')"
+            if [[ "$active_artifacts" -gt 0 ]]; then
+              echo "Restoring job data from successful run $previous_run."
+              gh run download "$previous_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
+            else
+              echo "::warning::Previous snapshot expired or missing; starting a new database."
+            fi
           else
             echo "No previous successful snapshot; starting a new database."
           fi
