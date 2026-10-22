@@ -76,9 +76,7 @@ def test_weworkremotely_parses_rss_item():
       <pubDate>Tue, 20 Oct 2026 00:00:00 GMT</pubDate>
       <description><![CDATA[<p>Technical support.</p>]]></description>
     </item></channel></rss>"""
-    jobs = weworkremotely.fetch_jobs(
-        {"wwr_feeds": ["https://example.com/feed"]}, lambda _: payload
-    )
+    jobs = weworkremotely.fetch_jobs({"wwr_feeds": ["https://example.com/feed"]}, lambda _: payload)
     assert jobs[0].company == "Example Co"
     assert jobs[0].title == "IT Support Engineer"
     assert jobs[0].location == "Worldwide"

@@ -12,9 +12,7 @@ Fetcher = Callable[[str], bytes]
 API_URL = "https://remoteok.com/api"
 
 
-def fetch_jobs(
-    config: Mapping[str, object], fetcher: Fetcher = fetch_bytes
-) -> list[Job]:
+def fetch_jobs(config: Mapping[str, object], fetcher: Fetcher = fetch_bytes) -> list[Job]:
     del config
     data = json.loads(fetcher(API_URL))
     if not isinstance(data, list):

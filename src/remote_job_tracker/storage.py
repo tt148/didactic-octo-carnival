@@ -9,7 +9,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from remote_job_tracker.models import Job
+from remote_job_tracker.models import Job, SourceCollectionStats
 
 VALID_STATUSES = {"new", "saved", "applied", "ignored"}
 CSV_COLUMNS = (
@@ -53,8 +53,61 @@ def connect_database(path: Path) -> sqlite3.Connection:
             PRIMARY KEY (source, job_id)
         )"""
     )
+    db.execute(
+        """CREATE TABLE IF NOT EXISTS source_collection_stats (
+            source TEXT PRIMARY KEY,
+            fetched INTEGER NOT NULL,
+            matched INTEGER NOT NULL,
+            new INTEGER NOT NULL,
+            error TEXT NOT NULL DEFAULT '',
+            collected_at TEXT NOT NULL
+        )"""
+    )
     _migrate_legacy_jobs_table(db)
     return db
+
+
+def save_source_collection_stats(
+    db: sqlite3.Connection, stats: Iterable[SourceCollectionStats]
+) -> None:
+    collected_at = datetime.now(UTC).isoformat(timespec="seconds")
+    with db:
+        db.execute("DELETE FROM source_collection_stats")
+        db.executemany(
+            """INSERT INTO source_collection_stats
+            (source, fetched, matched, new, error, collected_at)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            [
+                (
+                    item.source,
+                    item.fetched,
+                    item.matched,
+                    item.new,
+                    item.error,
+                    collected_at,
+                )
+                for item in stats
+            ],
+        )
+
+
+def load_source_collection_stats(
+    db: sqlite3.Connection,
+) -> list[SourceCollectionStats]:
+    rows = db.execute(
+        """SELECT source, fetched, matched, new, error
+        FROM source_collection_stats ORDER BY source"""
+    )
+    return [
+        SourceCollectionStats(
+            source=row["source"],
+            fetched=row["fetched"],
+            matched=row["matched"],
+            new=row["new"],
+            error=row["error"],
+        )
+        for row in rows
+    ]
 
 
 def _migrate_legacy_jobs_table(db: sqlite3.Connection) -> None:
@@ -187,9 +240,7 @@ def update_status(db: sqlite3.Connection, source: str, job_id: str, status: str)
 
 def export_csv(db: sqlite3.Connection, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    rows = db.execute(
-        f"SELECT {', '.join(CSV_COLUMNS)} FROM jobs ORDER BY first_seen DESC"
-    )
+    rows = db.execute(f"SELECT {', '.join(CSV_COLUMNS)} FROM jobs ORDER BY first_seen DESC")
     with path.open("w", newline="", encoding="utf-8-sig") as file:
         writer = csv.writer(file)
         writer.writerow(CSV_COLUMNS)

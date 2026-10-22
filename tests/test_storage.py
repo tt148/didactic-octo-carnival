@@ -36,9 +36,7 @@ def test_save_jobs_deduplicates_and_preserves_status_and_first_seen(tmp_path):
     job.score_reasons = ["Skills: 3/8 matched - 19/50 points."]
     assert save_jobs(db, [job]) == []
     assert save_jobs(db, [job]) == []
-    saved = db.execute(
-        "SELECT status, first_seen, fit_score, score_reasons FROM jobs"
-    ).fetchone()
+    saved = db.execute("SELECT status, first_seen, fit_score, score_reasons FROM jobs").fetchone()
     assert saved["status"] == "saved"
     assert saved["first_seen"] == first_seen
     assert saved["fit_score"] == 87
@@ -111,9 +109,7 @@ def test_refreshing_existing_job_updates_description_but_preserves_tracking(tmp_
     refreshed.fit_score = 77
     refreshed.score_reasons = ["Updated score reason."]
     assert save_jobs(db, [refreshed]) == []
-    stored = db.execute(
-        "SELECT description, status, first_seen, fit_score FROM jobs"
-    ).fetchone()
+    stored = db.execute("SELECT description, status, first_seen, fit_score FROM jobs").fetchone()
     assert stored["description"] == "Full, refreshed listing details."
     assert stored["status"] == "applied"
     assert stored["first_seen"] == first_seen

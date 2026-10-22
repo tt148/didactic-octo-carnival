@@ -101,9 +101,7 @@ def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
     skill_points = round(weights["skills"] * len(skill_matches) / len(skills))
     matched_skill_text = (
         ", ".join(
-            f"{skill} (matched '{phrase}')"
-            if phrase.casefold() != skill.casefold()
-            else skill
+            f"{skill} (matched '{phrase}')" if phrase.casefold() != skill.casefold() else skill
             for skill, phrase in skill_matches.items()
         )
         if skill_matches
@@ -137,22 +135,17 @@ def score_job(job: Job, config: Mapping[str, object]) -> FitScore:
     else:
         location_points = 0
         location_reason = (
-            f"restricted location - 0/{weights['location']} points; "
-            f"{location_detail.rstrip('.')}"
+            f"restricted location - 0/{weights['location']} points; {location_detail.rstrip('.')}"
         )
 
     seniority = "standard"
     seniority_points = weights["seniority"]
     if any(_has_phrase(job.title, term) for term in high_stretch_terms):
         seniority = "high stretch"
-        seniority_points = max(
-            0, weights["seniority"] - weights["high_stretch_penalty"]
-        )
+        seniority_points = max(0, weights["seniority"] - weights["high_stretch_penalty"])
     elif any(_has_phrase(job.title, term) for term in seniority_terms):
         seniority = "seniority stretch"
-        seniority_points = max(
-            0, weights["seniority"] - weights["senior_stretch_penalty"]
-        )
+        seniority_points = max(0, weights["seniority"] - weights["senior_stretch_penalty"])
 
     score = skill_points + role_points + location_points + seniority_points
     reasons = (

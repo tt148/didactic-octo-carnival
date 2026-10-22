@@ -9,8 +9,14 @@ from remote_job_tracker.dashboard import (
     nigeria_eligible_share,
     prepare_dashboard_jobs,
 )
-from remote_job_tracker.models import Job
-from remote_job_tracker.storage import connect_database, save_jobs, update_status
+from remote_job_tracker.models import Job, SourceCollectionStats
+from remote_job_tracker.storage import (
+    connect_database,
+    load_source_collection_stats,
+    save_jobs,
+    save_source_collection_stats,
+    update_status,
+)
 
 CONFIG = {
     "title_include": ["it support", "technical support", "customer support"],
@@ -131,3 +137,20 @@ def test_load_jobs_handles_legacy_schema_migration(tmp_path):
     assert len(jobs) == 1
     assert jobs[0].first_seen == "2026-01-01T00:00:00"
     migrated.close()
+
+
+def test_dashboard_can_load_latest_source_collection_counts(tmp_path):
+    db = connect_database(tmp_path / "jobs.db")
+    save_source_collection_stats(
+        db,
+        [
+            SourceCollectionStats("remoteok", 12, 0, 0),
+            SourceCollectionStats("remotive", 8, 3, 2),
+        ],
+    )
+    stats = load_source_collection_stats(db)
+    assert [(item.source, item.fetched, item.matched, item.new) for item in stats] == [
+        ("remoteok", 12, 0, 0),
+        ("remotive", 8, 3, 2),
+    ]
+    db.close()

@@ -11,9 +11,7 @@ from remote_job_tracker.models import Job, make_job
 Fetcher = Callable[[str], bytes]
 
 
-def fetch_jobs(
-    config: Mapping[str, object], fetcher: Fetcher = fetch_bytes
-) -> list[Job]:
+def fetch_jobs(config: Mapping[str, object], fetcher: Fetcher = fetch_bytes) -> list[Job]:
     feeds = config.get("wwr_feeds", [])
     if not isinstance(feeds, list):
         raise ValueError("We Work Remotely config 'wwr_feeds' must be a list.")

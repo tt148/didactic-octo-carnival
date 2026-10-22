@@ -65,9 +65,7 @@ def test_unknown_location_is_visible_and_scores_below_allowed():
 
 
 def test_secondary_role_has_lower_role_points_than_primary_role():
-    primary = score_job(
-        make_job("IT Support Engineer", "Linux", "Nigeria"), CONFIG
-    )
+    primary = score_job(make_job("IT Support Engineer", "Linux", "Nigeria"), CONFIG)
     secondary = score_job(make_job("Data Analyst", "Linux", "Nigeria"), CONFIG)
     assert primary.score > secondary.score
     assert "25/25 points" in primary.reasons[1]
@@ -109,9 +107,7 @@ def test_aliases_match_and_are_explained():
     result = score_job(job, config)
     assert result.score == 100
     assert "help desk (matched 'helpdesk')" in result.reasons[0]
-    service_desk_result = score_job(
-        make_job("Service Desk Engineer", "", "Nigeria"), config
-    )
+    service_desk_result = score_job(make_job("Service Desk Engineer", "", "Nigeria"), config)
     assert "help desk (matched 'service desk')" in service_desk_result.reasons[0]
 
 
@@ -148,12 +144,24 @@ def test_teams_only_matches_microsoft_teams():
         "skill_match_aliases_only": ["Teams"],
     }
     ordinary_teams = build_job(
-        "remotive", "teams-1", "Support Engineer", "Example Co", "Nigeria",
-        "https://example.com/1", "", "You will work with teams across the company."
+        "remotive",
+        "teams-1",
+        "Support Engineer",
+        "Example Co",
+        "Nigeria",
+        "https://example.com/1",
+        "",
+        "You will work with teams across the company.",
     )
     microsoft_teams = build_job(
-        "remotive", "teams-2", "Support Engineer", "Example Co", "Nigeria",
-        "https://example.com/2", "", "Provide support for Microsoft Teams."
+        "remotive",
+        "teams-2",
+        "Support Engineer",
+        "Example Co",
+        "Nigeria",
+        "https://example.com/2",
+        "",
+        "Provide support for Microsoft Teams.",
     )
     assert matching_skills(ordinary_teams, profile) == {}
     assert matching_skills(microsoft_teams, profile) == {"Teams": "Microsoft Teams"}
@@ -169,13 +177,24 @@ def test_generic_documentation_and_cloud_require_technical_context():
         "skill_match_aliases_only": ["documentation", "cloud"],
     }
     job = build_job(
-        "remotive", "generic-terms", "Support Engineer", "Example Co", "Nigeria",
-        "https://example.com/1", "", "Collaborate with teams and maintain documentation."
+        "remotive",
+        "generic-terms",
+        "Support Engineer",
+        "Example Co",
+        "Nigeria",
+        "https://example.com/1",
+        "",
+        "Collaborate with teams and maintain documentation.",
     )
     specific = build_job(
-        "remotive", "specific-terms", "Support Engineer", "Example Co", "Nigeria",
-        "https://example.com/2", "",
-        "Maintain IT documentation and support AWS cloud infrastructure."
+        "remotive",
+        "specific-terms",
+        "Support Engineer",
+        "Example Co",
+        "Nigeria",
+        "https://example.com/2",
+        "",
+        "Maintain IT documentation and support AWS cloud infrastructure.",
     )
     assert matching_skills(job, profile) == {}
     assert matching_skills(specific, profile) == {

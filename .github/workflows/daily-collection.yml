@@ -38,25 +38,28 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$JOB_TRACKER_DATA_DIR"
-          previous_run="$(gh run list \
-            --workflow daily-collection.yml \
-            --branch "$GITHUB_REF_NAME" \
-            --status success \
-            --limit 1 \
-            --json databaseId \
-            --jq '.[0].databaseId // empty')"
-          if [[ -n "$previous_run" ]]; then
+          successful_runs="$(gh api --paginate --slurp \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/daily-collection.yml/runs" \
+            --field branch="$GITHUB_REF_NAME" \
+            --field status=success \
+            --field per_page=100 \
+            --jq '[.[].workflow_runs[] | .id] | .[]')"
+          snapshot_run=""
+          while IFS= read -r run_id; do
+            [[ -n "$run_id" ]] || continue
             active_artifacts="$(gh api \
-              "repos/${GITHUB_REPOSITORY}/actions/runs/${previous_run}/artifacts" \
+              "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
               --jq '[.artifacts[] | select(.name == "job-data" and .expired == false)] | length')"
             if [[ "$active_artifacts" -gt 0 ]]; then
-              echo "Restoring job data from successful run $previous_run."
-              gh run download "$previous_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
-            else
-              echo "::warning::Previous snapshot expired or missing; starting a new database."
+              snapshot_run="$run_id"
+              break
             fi
+          done <<< "$successful_runs"
+          if [[ -n "$snapshot_run" ]]; then
+            echo "Restoring job data from successful run $snapshot_run."
+            gh run download "$snapshot_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
           else
-            echo "No previous successful snapshot; starting a new database."
+            echo "::warning::No unexpired successful snapshot found; starting a new database."
           fi
 
       - name: Collect and score remote jobs

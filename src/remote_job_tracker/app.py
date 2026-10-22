@@ -19,7 +19,12 @@ from remote_job_tracker.dashboard import (
     prepare_dashboard_jobs,
 )
 from remote_job_tracker.paths import PROJECT_ROOT, data_directory
-from remote_job_tracker.storage import VALID_STATUSES, connect_database, update_status
+from remote_job_tracker.storage import (
+    VALID_STATUSES,
+    connect_database,
+    load_source_collection_stats,
+    update_status,
+)
 
 STATUS_OPTIONS = ("new", "saved", "applied", "ignored")
 LOCATION_OPTIONS = ("allowed", "unknown")
@@ -39,7 +44,28 @@ def run_dashboard() -> None:
         if not isinstance(config, dict):
             raise ValueError("config.json must contain a JSON object.")
         with closing(connect_database(data_directory() / "jobs.db")) as db:
+            source_stats = load_source_collection_stats(db)
             jobs = prepare_dashboard_jobs(db, config)
+            st.subheader("Latest collection by source")
+            if source_stats:
+                st.dataframe(
+                    pd.DataFrame(
+                        [
+                            {
+                                "Source": item.source,
+                                "Fetched": item.fetched,
+                                "Matched": item.matched,
+                                "New": item.new,
+                                "Status": f"Failed: {item.error}" if item.error else "OK",
+                            }
+                            for item in source_stats
+                        ]
+                    ),
+                    hide_index=True,
+                    use_container_width=True,
+                )
+            else:
+                st.info("No collection counts yet. Run `python collector.py` to collect jobs.")
             if not jobs:
                 st.info("No eligible job listings yet. Run `python collector.py` to collect jobs.")
                 return
@@ -88,9 +114,7 @@ def run_dashboard() -> None:
                 "Location-eligible share",
                 f"{nigeria_eligible_share(filtered):.0%}",
             )
-            st.caption(
-                "Share matching configured allowed regions; unknown locations do not count."
-            )
+            st.caption("Share matching configured allowed regions; unknown locations do not count.")
 
             st.subheader("Hiring trends")
             skill_counts = count_matching_skills(

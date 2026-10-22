@@ -13,9 +13,7 @@ Fetcher = Callable[[str], bytes]
 API_URL = "https://jobicy.com/api/v2/remote-jobs"
 
 
-def fetch_jobs(
-    config: Mapping[str, object], fetcher: Fetcher = fetch_bytes
-) -> list[Job]:
+def fetch_jobs(config: Mapping[str, object], fetcher: Fetcher = fetch_bytes) -> list[Job]:
     search_terms = config.get("search_terms", [])
     if not isinstance(search_terms, list):
         raise ValueError("Jobicy config 'search_terms' must be a list.")

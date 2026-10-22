@@ -85,9 +85,7 @@ def _text_has_location_restriction(
                 continue
             before = tokens[max(0, index - 6) : index]
             after = tokens[index + size : index + size + 4]
-            if LOCATION_CUES_BEFORE.intersection(before) or LOCATION_CUES_AFTER.intersection(
-                after
-            ):
+            if LOCATION_CUES_BEFORE.intersection(before) or LOCATION_CUES_AFTER.intersection(after):
                 return term
             if len(before) >= 2 and before[-2:] == ["based", "in"]:
                 return term
@@ -98,17 +96,13 @@ def _text_has_location_restriction(
     return None
 
 
-def assess_location(
-    job: Job, config: Mapping[str, object]
-) -> tuple[LocationAssessmentStatus, str]:
+def assess_location(job: Job, config: Mapping[str, object]) -> tuple[LocationAssessmentStatus, str]:
     allowed = config.get("location_allow", [])
     denied = config.get("location_deny", [])
     if not isinstance(allowed, list) or not isinstance(denied, list):
         raise ValueError("Location allow and deny config values must be lists.")
     denied_terms = [str(term) for term in denied]
-    restricted = _text_has_location_restriction(
-        job.title, job.description, denied_terms
-    )
+    restricted = _text_has_location_restriction(job.title, job.description, denied_terms)
     if restricted:
         return "restricted", f"Explicit {restricted} restriction in title or description."
     if any(_contains_phrase(job.location, term) for term in denied_terms):

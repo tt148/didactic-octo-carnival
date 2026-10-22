@@ -34,6 +34,15 @@ class Job:
     first_seen: str = ""
 
 
+@dataclass(frozen=True, slots=True)
+class SourceCollectionStats:
+    source: str
+    fetched: int
+    matched: int
+    new: int
+    error: str = ""
+
+
 def clean_text(value: object) -> str:
     """Convert a plain or HTML string to readable text."""
     if not isinstance(value, str):

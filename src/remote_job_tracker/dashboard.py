@@ -13,9 +13,7 @@ from remote_job_tracker.scoring import matching_skills, score_job
 from remote_job_tracker.storage import load_jobs, update_fit_score
 
 
-def prepare_dashboard_jobs(
-    db: sqlite3.Connection, config: Mapping[str, object]
-) -> list[Job]:
+def prepare_dashboard_jobs(db: sqlite3.Connection, config: Mapping[str, object]) -> list[Job]:
     """Re-score saved listings and return currently relevant, non-restricted roles."""
     profile = config.get("profile")
     if not isinstance(profile, Mapping):
@@ -56,9 +54,7 @@ def filter_jobs(
     ]
 
 
-def count_matching_skills(
-    jobs: Sequence[Job], profile: Mapping[str, object]
-) -> dict[str, int]:
+def count_matching_skills(jobs: Sequence[Job], profile: Mapping[str, object]) -> dict[str, int]:
     counts: Counter[str] = Counter()
     for job in jobs:
         counts.update(matching_skills(job, profile).keys())

@@ -13,9 +13,7 @@ Fetcher = Callable[[str], bytes]
 API_URL = "https://remotive.com/api/remote-jobs"
 
 
-def fetch_jobs(
-    config: Mapping[str, object], fetcher: Fetcher = fetch_bytes
-) -> list[Job]:
+def fetch_jobs(config: Mapping[str, object], fetcher: Fetcher = fetch_bytes) -> list[Job]:
     search_terms = config.get("search_terms", [])
     if not isinstance(search_terms, list):
         raise ValueError("Remotive config 'search_terms' must be a list.")
