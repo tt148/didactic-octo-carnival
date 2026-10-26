@@ -38,19 +38,32 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$JOB_TRACKER_DATA_DIR"
-          successful_runs="$(gh api --paginate --slurp \
+          mkdir -p "$JOB_TRACKER_DATA_DIR" || {
+            echo "::warning::Could not create the job data directory; starting without a restored snapshot."
+            exit 0
+          }
+          rm -f "$JOB_TRACKER_DATA_DIR/jobs.db" "$JOB_TRACKER_DATA_DIR/jobs.csv" || {
+            echo "::warning::Could not clear existing job data; starting without a restored snapshot."
+            exit 0
+          }
+          if ! successful_runs="$(gh api --paginate \
             "repos/${GITHUB_REPOSITORY}/actions/workflows/daily-collection.yml/runs" \
             --field branch="$GITHUB_REF_NAME" \
             --field status=success \
             --field per_page=100 \
-            --jq '[.[].workflow_runs[] | .id] | .[]')"
+            --jq '.workflow_runs[]?.id')"; then
+            echo "::warning::Could not list successful collection runs; starting with an empty database."
+            exit 0
+          fi
           snapshot_run=""
           while IFS= read -r run_id; do
             [[ -n "$run_id" ]] || continue
-            active_artifacts="$(gh api \
-              "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
-              --jq '[.artifacts[] | select(.name == "job-data" and .expired == false)] | length')"
+            if ! active_artifacts="$(gh api \
+                "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/artifacts" \
+                --jq '[.artifacts[]? | select(.name == "job-data" and .expired == false)] | length')"; then
+              echo "::warning::Could not list artifacts for run $run_id; starting with an empty database."
+              exit 0
+            fi
             if [[ "$active_artifacts" -gt 0 ]]; then
               snapshot_run="$run_id"
               break
@@ -58,9 +71,14 @@ jobs:
           done <<< "$successful_runs"
           if [[ -n "$snapshot_run" ]]; then
             echo "Restoring job data from successful run $snapshot_run."
-            gh run download "$snapshot_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"
+            if ! gh run download "$snapshot_run" --name job-data --dir "$JOB_TRACKER_DATA_DIR"; then
+              if ! rm -f "$JOB_TRACKER_DATA_DIR/jobs.db" "$JOB_TRACKER_DATA_DIR/jobs.csv"; then
+                echo "::warning::Could not remove partial snapshot files after download failure."
+              fi
+              echo "::warning::Could not download the job-data snapshot; starting with an empty database."
+            fi
           else
-            echo "::warning::No unexpired successful snapshot found; starting a new database."
+            echo "::warning::No unexpired successful snapshot found; starting with an empty database."
           fi
 
       - name: Diagnose project paths
