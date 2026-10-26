@@ -18,6 +18,7 @@ jobs:
     name: Collect, score, and persist jobs
     runs-on: ubuntu-latest
     env:
+      JOB_TRACKER_PROJECT_DIR: ${{ github.workspace }}
       JOB_TRACKER_DATA_DIR: ${{ github.workspace }}/data
       GH_TOKEN: ${{ github.token }}
     steps:
