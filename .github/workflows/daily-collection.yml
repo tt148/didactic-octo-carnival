@@ -81,9 +81,6 @@ jobs:
             echo "::warning::No unexpired successful snapshot found; starting with an empty database."
           fi
 
-      - name: Diagnose project paths
-        run: python -c "import remote_job_tracker.paths as p; print(p.__file__); print(p.PROJECT_ROOT)"
-
       - name: Collect and score remote jobs
         run: python collector.py
 
